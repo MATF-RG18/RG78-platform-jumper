@@ -18,6 +18,10 @@ static int movement_flag=0;
 static int jump_flag=0;
 static int fall_flag=0;
 static int floor=0;
+static int num;
+static float min_floor;
+static float max_floor;
+float* data;
 
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_display(void);
@@ -73,6 +77,131 @@ void makePlayer(void){
 }
 
 
+void init_level(int* num, float** data , float* min_floor, float* max_floor){
+	
+	FILE* f=fopen("level.txt","r");
+	
+	if(f==NULL){
+		fprintf(stderr,"fopen failed");
+		exit(EXIT_FAILURE);
+	}
+		
+	int n;
+	fscanf(f,"%d",&n);
+	
+	*num=n;	
+		
+	if((*data=realloc(*data ,3 * n * sizeof(float)))==NULL){
+		fprintf(stderr,"realloc failed");
+		exit(EXIT_FAILURE);
+	}
+	
+	fscanf(f,"%f",&(*data)[0]);		//min_x
+	fscanf(f,"%f",&(*data)[1]);		//max_x
+	fscanf(f,"%f",&(*data)[2]);		//floor
+	*min_floor=(*data)[2];
+	*max_floor=(*data)[2];
+		
+	int i;
+	
+	for(i=1;i<n;i++){
+		fscanf(f,"%f",&(*data)[i*3]);			//min_x
+		fscanf(f,"%f",&(*data)[i*3+1]);		//max_x
+		fscanf(f,"%f",&(*data)[i*3+2]);		//floor
+		
+		if((*data)[i*3+2]<*min_floor)
+			*min_floor=(*data)[i*3+2];
+			
+		if((*data)[i*3+2]>*max_floor)
+			*max_floor=(*data)[i*3+2];			
+	}
+	
+	
+	
+	
+	fclose(f);
+	return;
+}
+
+
+void funcMakeBlock(float min_x, float max_x, float floor_y){
+
+		//pravimo podlogu
+		
+    glBegin(GL_QUADS);
+        glNormal3f(0, 1, 0);
+
+        glTexCoord2f(12, 6);
+        glVertex3f(max_x,floor_y,-1);
+
+        glTexCoord2f(12, 0);
+        glVertex3f(max_x,floor_y, 2);
+
+        glTexCoord2f(0, 0);
+        glVertex3f(min_x,floor_y, 2);
+
+        glTexCoord2f(0, 6);
+        glVertex3f(min_x,floor_y,-1);
+    glEnd();
+    
+    	//pravimo prednju ivicu podloge
+    	
+     glBegin(GL_QUADS);
+         glNormal3f(0, 0, 1);
+ 
+         glTexCoord2f(12, 6);
+         glVertex3f(max_x,floor_y  , 2);
+ 
+         glTexCoord2f(12, 0);
+         glVertex3f(max_x,floor_y-1, 2);
+ 
+         glTexCoord2f(0, 0);
+         glVertex3f(min_x,floor_y-1, 2);
+ 
+         glTexCoord2f(0, 6);
+         glVertex3f(min_x,floor_y  , 2);
+     glEnd();
+     
+     	//leva ivica
+     
+     glBegin(GL_QUADS);
+         glNormal3f(-1, 0, 0);
+ 
+         glTexCoord2f(12, 6);
+         glVertex3f(min_x,floor_y  , 2);
+ 
+         glTexCoord2f(12, 0);
+         glVertex3f(min_x,floor_y-1, 2);
+ 
+         glTexCoord2f(0, 0);
+         glVertex3f(min_x,floor_y-1,-1);
+ 
+         glTexCoord2f(0, 6);
+         glVertex3f(min_x,floor_y  ,-1);
+     glEnd();
+     
+     	//desna ivica
+     
+     glBegin(GL_QUADS);
+         glNormal3f(1, 0, 0);
+ 
+         glTexCoord2f(12, 6);
+         glVertex3f(max_x,floor_y  , 2);
+ 
+         glTexCoord2f(12, 0);
+         glVertex3f(max_x,floor_y-1, 2);
+ 
+         glTexCoord2f(0, 0);
+         glVertex3f(max_x,floor_y-1,-1);
+ 
+         glTexCoord2f(0, 6);
+         glVertex3f(max_x,floor_y  ,-1);
+     glEnd();
+     
+     glBindTexture(GL_TEXTURE_2D, 0);	//iskljucujemo aktivnu teksturu
+}
+
+
 static void initialize_lights(void){
   GLfloat light_position[] = {1,10,5,0};
   GLfloat light_ambient[] = {0.1,0.1,0.1,1};
@@ -97,8 +226,13 @@ int main(int argc, char** argv){
   glutKeyboardFunc(on_keyboard);
   glutReshapeFunc(on_reshape);
   glutDisplayFunc(on_display);
+  
+  data=malloc(sizeof(float));
+  init_level(&num,&data,&min_floor,&max_floor);
+  y_jump=data[2];
 
   initialize_lights();
+  
   
   glClearColor(0.75,0.75,0.75,0);
 
@@ -251,6 +385,11 @@ static void on_display(void){
 	    0,1,0
   );
 
+  int i;
+  
+  for(i=0;i<num;i++)
+    funcMakeBlock(data[3*i],data[3*i+1],data[3*i+2]);
+  
   glPushMatrix();
 	glTranslatef(x_cam,y_jump,1);
 	makePlayer();
