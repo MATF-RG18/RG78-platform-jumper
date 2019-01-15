@@ -38,7 +38,7 @@ int main(int argc, char** argv){
   
   data=malloc(sizeof(float));
   init_level(&num,&data,&min_floor,&max_floor);
-  y_jump=data[2];
+  y_jump_height=data[2];
 
   
   init_tex();
@@ -115,7 +115,7 @@ static void on_timer(int value){
   if(value != TIMER_ID)
     return;
   
-  if(y_jump <= death_floor){
+  if(y_jump_height <= death_floor){
       
       printf("Game Over\n");
       free(data);
@@ -139,7 +139,7 @@ static void on_timer(int value){
     t+=0.2;
     
     jump_speed = jump_speed - g*t;
-    y_jump=y_jump+jump_speed*t;
+    y_jump_height=y_jump_height+jump_speed*t;
     
     if(jump_speed<=0){
         fall_flag=1;
@@ -150,16 +150,16 @@ static void on_timer(int value){
   
   else{
       
-    if(death_flag==0 && y_jump <=floor){
+    if(death_flag==0 && y_jump_height <=floor){
       fall_flag=0;
       jump_flag=0;
       t=0;
-      y_jump=floor;
+      y_jump_height=floor;
       jump_speed=0.5;
     }
   }
   //pad
-  if(jump_flag != 1 && (death_flag!=0 || y_jump > floor)){
+  if(jump_flag != 1 && (death_flag!=0 || y_jump_height > floor)){
       
     fall_flag=1;
     jump_flag=0;
@@ -170,7 +170,7 @@ static void on_timer(int value){
       jump_speed=0.5;
     }
     
-    y_jump=y_jump-jump_speed;			
+    y_jump_height=y_jump_height-jump_speed;			
   }	
   else{
     fall_flag=0;
@@ -202,11 +202,11 @@ static void on_display(void){
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   
-    if(y_cam+1<y_jump){
-    	y_cam=y_jump-1;
+    if(y_cam+1<y_jump_height){
+    	y_cam=y_jump_height-1;
     }
-    if(y_cam-1>y_jump){
-    	y_cam=y_jump+1;
+    if(y_cam-1>y_jump_height){
+    	y_cam=y_jump_height+1;
     }
 
   gluLookAt(
@@ -254,7 +254,7 @@ static void on_display(void){
     }
 }
   
-  if(x_cam+0.2 >= curr_x_l && x_cam-0.2 <= curr_x_r && y_jump >= floor){
+  if(x_cam+0.2 >= curr_x_l && x_cam-0.2 <= curr_x_r && y_jump_height >= floor){
       death_flag=0;
 }
     //umire levo
@@ -268,36 +268,36 @@ static void on_display(void){
     
     //sledeca podloga
     
-  if(x_cam + 0.2 >= next_x_l && y_jump >= next_floor){
+  if(x_cam + 0.2 >= next_x_l && y_jump_height >= next_floor){
         change_floors=1;
         floor_counter++;
         glutPostRedisplay();
     }
     //ukoliko ne moze da dohvati podlogu u skoku
-  if(x_cam + 0.2 >= next_x_l && y_jump < next_floor){
+  if(x_cam + 0.2 >= next_x_l && y_jump_height < next_floor){
         
         //velicina igraca je 0.8, podloge je 1
-        if(y_jump > next_floor - 1.8){
+        if(y_jump_height > next_floor - 1.8){
             x_cam=next_x_l-0.2;
         }
     }
   
     //prethodna podloga
     
-  if(x_cam - 0.2 <= prev_x_r && y_jump >= next_floor){
+  if(x_cam - 0.2 <= prev_x_r && y_jump_height >= next_floor){
         change_floors=1;
         floor_counter--;
         glutPostRedisplay();
     }
     //ukoliko ne moze da dohvati podlogu u skoku
-  if(x_cam - 0.2 <= prev_x_r && y_jump < next_floor){
-        if(y_jump > prev_floor - 1.8){
+  if(x_cam - 0.2 <= prev_x_r && y_jump_height < next_floor){
+        if(y_jump_height > prev_floor - 1.8){
             x_cam=prev_x_r-0.2;
         }
     }
     
     //kraj igre
-  if(floor_counter==(num-1) && y_jump==floor){
+  if(floor_counter==(num-1) && y_jump_height==floor){
         free(data);
         printf("Congratulations\n");
         exit(EXIT_SUCCESS);
@@ -306,7 +306,7 @@ static void on_display(void){
   
   //igrac
   glPushMatrix();
-	glTranslatef(x_cam,y_jump,1);
+	glTranslatef(x_cam,y_jump_height,1);
 	make_player();
   glPopMatrix();
   

@@ -4,7 +4,7 @@ static float dx=0.1;
 
 static float y_cam=0.3;
 //visina po y osi
-static float y_jump=0;
+static float y_jump_height=0;
 
 static float jump_speed = 0.5;
 static float g=0.07;
