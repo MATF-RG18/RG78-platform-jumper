@@ -15,7 +15,7 @@ GLfloat material_emission[] = { 0.3, 0.2, 0.2, 0 };
 
 
 
-void makeBackground(GLuint background,GLuint death,float min_x,float max_x,float min_y,float max_y,float far_z,float near_z){
+void make_background(GLuint background,GLuint death,float min_x,float max_x,float min_y,float max_y,float far_z,float near_z){
       
     glBindTexture(GL_TEXTURE_2D,background);
     glBegin(GL_QUADS);
@@ -56,7 +56,7 @@ void makeBackground(GLuint background,GLuint death,float min_x,float max_x,float
     glBindTexture(GL_TEXTURE_2D,0);
 }
 
-void makePlayer(void){
+void make_player(void){
   GLdouble headRadius = 0.2;
   GLdouble bodyHeight = 0.4;
   
@@ -91,51 +91,43 @@ void makePlayer(void){
 
 
 void init_level(int* num, float** data , float* min_floor, float* max_floor){
-	
+	/*pomoc oko ideje za podloge (kako da ih zadajem i kasnije kako da postupam prilikom preskoka) 
+     *dao kolega koji je radio slican projekat*/
     FILE* f=fopen("level.txt","r");
-
     if(f==NULL){
         fprintf(stderr,"fopen failed");
         exit(EXIT_FAILURE);
 	}
-	
     int n;
     fscanf(f,"%d",&n);
-    
     *num=n;	
-        
     if((*data=realloc(*data ,3 * n * sizeof(float)))==NULL){
         fprintf(stderr,"realloc failed");
         exit(EXIT_FAILURE);
     }
 	
-    fscanf(f,"%f",&(*data)[0]);		//min_x
-    fscanf(f,"%f",&(*data)[1]);		//max_x
-    fscanf(f,"%f",&(*data)[2]);		//floor
+    fscanf(f,"%f",&(*data)[0]);
+    fscanf(f,"%f",&(*data)[1]);
+    fscanf(f,"%f",&(*data)[2]);
     *min_floor=(*data)[2];
     *max_floor=(*data)[2];
         
     int i;
-	
     for(i=1;i<n;i++){
-        fscanf(f,"%f",&(*data)[i*3]);			//min_x
-        fscanf(f,"%f",&(*data)[i*3+1]);		//max_x
-        fscanf(f,"%f",&(*data)[i*3+2]);		//floor
-        
+        fscanf(f,"%f",&(*data)[i*3]);
+        fscanf(f,"%f",&(*data)[i*3+1]);
+        fscanf(f,"%f",&(*data)[i*3+2]);
         if((*data)[i*3+2]<*min_floor)
             *min_floor=(*data)[i*3+2];
-            
         if((*data)[i*3+2]>*max_floor)
             *max_floor=(*data)[i*3+2];			
-        
     }
-    
     fclose(f);
     return;
 }
 
 
-void funcMakeBlock(GLuint name,float min_x, float max_x, float floor_y){
+void make_block(GLuint name,float min_x, float max_x, float floor_y){
 
     glBindTexture(GL_TEXTURE_2D,name);
     glBegin(GL_QUADS);

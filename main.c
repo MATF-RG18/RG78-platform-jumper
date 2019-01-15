@@ -209,8 +209,6 @@ static void on_display(void){
     	y_cam=y_jump+1;
     }
 
-
-
   gluLookAt(
 	    x_cam,2+y_cam,10,
 	    x_cam,y_cam,0,
@@ -220,7 +218,7 @@ static void on_display(void){
   int i;
   
   for(i=0;i<num;i++)
-    funcMakeBlock(names[1],data[3*i],data[3*i+1],data[3*i+2]);
+    make_block(names[1],data[3*i],data[3*i+1],data[3*i+2]);
   
   
   //inicijalizacija promenljivih
@@ -234,6 +232,7 @@ static void on_display(void){
           
           change_floors=0;
     }
+    
   else{
           next_x_l=data[3*(floor_counter+1)];
           curr_x_l=data[3*floor_counter];
@@ -252,8 +251,6 @@ static void on_display(void){
         }
           
         change_floors=0;
-
-        
     }
 }
   
@@ -310,13 +307,13 @@ static void on_display(void){
   //igrac
   glPushMatrix();
 	glTranslatef(x_cam,y_jump,1);
-	makePlayer();
+	make_player();
   glPopMatrix();
   
   
   //pozadina
-  death_floor = min_floor-0.5;
-  makeBackground(names[0],names[2],data[0]-20,data[3*num-2]+30,death_floor,max_floor+10,-6,8);
+  death_floor = min_floor - 0.5;
+  make_background(names[0],names[2],data[0]-20,data[3*num-2]+20,death_floor, max_floor+10 , -8 ,8);
 
   glutSwapBuffers();
 
