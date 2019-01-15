@@ -30,7 +30,7 @@ int main(int argc, char** argv){
   glutInit(&argc,argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
 
-  glutCreateWindow("Run man, Run");
+  glutCreateWindow("Platform jumper");
   glutFullScreen();
   glutKeyboardFunc(on_keyboard);
   glutReshapeFunc(on_reshape);
