@@ -91,8 +91,7 @@ void make_player(void){
 
 
 void init_level(int* num, float** data , float* min_floor, float* max_floor){
-	/*pomoc oko ideje za podloge (kako da ih zadajem i kasnije kako da postupam prilikom preskoka) 
-     *dao kolega koji je radio slican projekat*/
+	/*pomoc oko ideja za podloge dao kolega koji je radio slican projekat*/
     FILE* f=fopen("level.txt","r");
     if(f==NULL){
         fprintf(stderr,"fopen failed");
