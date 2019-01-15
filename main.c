@@ -1,220 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
+#include "image.h"
+#include "config.h"
+#include "helper.h"
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 20
+#define FILENAME0 "background.bmp"
+#define FILENAME1 "brick.bmp"
+#define FILENAME2 "death.bmp"
 
 
+
+GLuint names[2];
 static int animation_ongoing;
-static float x_cam=0;
-static float dx=0.1;
-static float y_cam=0.3;
-static float y_jump=0;
-static float jump_speed = 0.5;
-static float g=0.07;
-static float t=0;
-static int movement_flag=0;
-static int jump_flag=0;
-static int fall_flag=0;
-static int floor=0;
-static int num;
-static float min_floor;
-static float max_floor;
-float* data;
+
 
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_display(void);
 static void on_reshape(int width,int height);
 static void on_timer(int value);
     
-    GLfloat light_position[] = { 1, 1, 1, 0 };
-    GLfloat no_material[] = { 0, 0, 0, 1 };
-    GLfloat material_ambient[] = { 0.7, 0.7, 0.7, 1 };
-    GLfloat material_ambient_heterogeneous[] = { 0.8, 0.8, 0.2, 1 };
-    GLfloat material_diffuse[] = { 0.1, 0.5, 0.8, 1 };
-    GLfloat material_specular[] = { 1, 1, 1, 1 };
-    GLfloat no_shininess[] = { 0 };
-    GLfloat low_shininess[] = { 5 };
-    GLfloat high_shininess[] = { 100 };
-    GLfloat material_emission[] = { 0.3, 0.2, 0.2, 0 };
+static void init_tex(void);
 
-
-
-void makePlayer(void){
-  GLdouble headRadius = 0.2;
-  GLdouble bodyHeight = 0.4;
-  
-  //head
-  glPushMatrix();
-    glTranslatef(0,bodyHeight/2,0);
-    glPushMatrix();
-      glMaterialfv(GL_FRONT,GL_AMBIENT,no_material);
-      glMaterialfv(GL_FRONT,GL_DIFFUSE,material_diffuse);
-      glMaterialfv(GL_FRONT,GL_SPECULAR,no_material);
-      glMaterialfv(GL_FRONT,GL_SHININESS,no_shininess);
-      glMaterialfv(GL_FRONT,GL_EMISSION,material_emission);
-      glColor3f(0.7,0.1,0.1);
-      glTranslatef(0,headRadius*2,0);
-      glutSolidSphere(headRadius,50,50);
-    glPopMatrix();
-  
-  
-  //body
-    glPushMatrix();
-      glMaterialfv(GL_FRONT,GL_AMBIENT,no_material);
-      glMaterialfv(GL_FRONT,GL_DIFFUSE,material_diffuse);
-      glMaterialfv(GL_FRONT,GL_SPECULAR,no_material);
-      glMaterialfv(GL_FRONT,GL_SHININESS,no_shininess);
-      glMaterialfv(GL_FRONT,GL_EMISSION,material_emission);
-      glColor3f(0,0.5,1);
-      glutSolidCube(bodyHeight);
-    glPopMatrix();
-  glPopMatrix();
-
-
-  
-}
-
-
-void init_level(int* num, float** data , float* min_floor, float* max_floor){
-	
-	FILE* f=fopen("level.txt","r");
-	
-	if(f==NULL){
-		fprintf(stderr,"fopen failed");
-		exit(EXIT_FAILURE);
-	}
-		
-	int n;
-	fscanf(f,"%d",&n);
-	
-	*num=n;	
-		
-	if((*data=realloc(*data ,3 * n * sizeof(float)))==NULL){
-		fprintf(stderr,"realloc failed");
-		exit(EXIT_FAILURE);
-	}
-	
-	fscanf(f,"%f",&(*data)[0]);		//min_x
-	fscanf(f,"%f",&(*data)[1]);		//max_x
-	fscanf(f,"%f",&(*data)[2]);		//floor
-	*min_floor=(*data)[2];
-	*max_floor=(*data)[2];
-		
-	int i;
-	
-	for(i=1;i<n;i++){
-		fscanf(f,"%f",&(*data)[i*3]);			//min_x
-		fscanf(f,"%f",&(*data)[i*3+1]);		//max_x
-		fscanf(f,"%f",&(*data)[i*3+2]);		//floor
-		
-		if((*data)[i*3+2]<*min_floor)
-			*min_floor=(*data)[i*3+2];
-			
-		if((*data)[i*3+2]>*max_floor)
-			*max_floor=(*data)[i*3+2];			
-	}
-	
-	
-	
-	
-	fclose(f);
-	return;
-}
-
-
-void funcMakeBlock(float min_x, float max_x, float floor_y){
-
-		//pravimo podlogu
-		
-    glBegin(GL_QUADS);
-        glNormal3f(0, 1, 0);
-
-        glTexCoord2f(12, 6);
-        glVertex3f(max_x,floor_y,-1);
-
-        glTexCoord2f(12, 0);
-        glVertex3f(max_x,floor_y, 2);
-
-        glTexCoord2f(0, 0);
-        glVertex3f(min_x,floor_y, 2);
-
-        glTexCoord2f(0, 6);
-        glVertex3f(min_x,floor_y,-1);
-    glEnd();
-    
-    	//pravimo prednju ivicu podloge
-    	
-     glBegin(GL_QUADS);
-         glNormal3f(0, 0, 1);
- 
-         glTexCoord2f(12, 6);
-         glVertex3f(max_x,floor_y  , 2);
- 
-         glTexCoord2f(12, 0);
-         glVertex3f(max_x,floor_y-1, 2);
- 
-         glTexCoord2f(0, 0);
-         glVertex3f(min_x,floor_y-1, 2);
- 
-         glTexCoord2f(0, 6);
-         glVertex3f(min_x,floor_y  , 2);
-     glEnd();
-     
-     	//leva ivica
-     
-     glBegin(GL_QUADS);
-         glNormal3f(-1, 0, 0);
- 
-         glTexCoord2f(12, 6);
-         glVertex3f(min_x,floor_y  , 2);
- 
-         glTexCoord2f(12, 0);
-         glVertex3f(min_x,floor_y-1, 2);
- 
-         glTexCoord2f(0, 0);
-         glVertex3f(min_x,floor_y-1,-1);
- 
-         glTexCoord2f(0, 6);
-         glVertex3f(min_x,floor_y  ,-1);
-     glEnd();
-     
-     	//desna ivica
-     
-     glBegin(GL_QUADS);
-         glNormal3f(1, 0, 0);
- 
-         glTexCoord2f(12, 6);
-         glVertex3f(max_x,floor_y  , 2);
- 
-         glTexCoord2f(12, 0);
-         glVertex3f(max_x,floor_y-1, 2);
- 
-         glTexCoord2f(0, 0);
-         glVertex3f(max_x,floor_y-1,-1);
- 
-         glTexCoord2f(0, 6);
-         glVertex3f(max_x,floor_y  ,-1);
-     glEnd();
-     
-     glBindTexture(GL_TEXTURE_2D, 0);	//iskljucujemo aktivnu teksturu
-}
-
-
-static void initialize_lights(void){
-  GLfloat light_position[] = {1,10,5,0};
-  GLfloat light_ambient[] = {0.1,0.1,0.1,1};
-  GLfloat light_diffuse[] = {0.7,0.7,0.7,1};
-  GLfloat light_specular[] = {0.9,0.9,0.9,1};
-
-  glEnable(GL_LIGHTING);
-  glEnable(GL_LIGHT0);
-  glLightfv(GL_LIGHT0,GL_POSITION,light_position);
-  glLightfv(GL_LIGHT0,GL_AMBIENT,light_ambient);
-  glLightfv(GL_LIGHT0,GL_DIFFUSE,light_diffuse);
-  glLightfv(GL_LIGHT0,GL_SPECULAR,light_specular);
-}
 
 
 int main(int argc, char** argv){
@@ -231,7 +40,9 @@ int main(int argc, char** argv){
   init_level(&num,&data,&min_floor,&max_floor);
   y_jump=data[2];
 
-  initialize_lights();
+  
+  init_tex();
+  init_lights();
   
   
   glClearColor(0.75,0.75,0.75,0);
@@ -255,40 +66,45 @@ static void on_keyboard(unsigned char key, int x, int y){
     case 'A':
     case 'a':
       movement_flag=-1;
+      
       if(!animation_ongoing){
-	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
-	animation_ongoing = 1;
+            glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
+            animation_ongoing = 1;
       }
+      
       glutPostRedisplay();
       break;
     case 'D':
     case 'd':
       movement_flag=1;
+      
       if(!animation_ongoing){
-	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
-	animation_ongoing = 1;
+            glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
+            animation_ongoing = 1;
       }
+      
       glutPostRedisplay();
       break;
-
     case 'S':
     case 's':
       movement_flag=0;
+      
       glutPostRedisplay();
       break;
-    
-    
     case 'W':
     case 'w':
-      if(fall_flag != 1){
-	jump_flag =1;
-	t=0;
-	if(!animation_ongoing){
-	  glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
-	  animation_ongoing = 1;
-	}
-      }
-      break;
+        
+        if(fall_flag != 1){
+            jump_flag =1;
+            t=0;
+            
+            if(!animation_ongoing){
+                glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
+                animation_ongoing = 1;
+            }
+          
+        }
+        break;
   }
 }
 
@@ -298,28 +114,43 @@ static void on_timer(int value){
 
   if(value != TIMER_ID)
     return;
+  
+  if(y_jump <= death_floor){
+      
+      printf("Game Over\n");
+      free(data);
+      exit(EXIT_SUCCESS);
+}
 
   if(movement_flag ==1){
+      //pomeramo se desno
     x_cam = x_cam + dx;
   }
 
   if(movement_flag == -1){
+      //pomeramo se u levo
     x_cam = x_cam - dx;
   }
   
   
   //skok
   if(jump_flag == 1 && fall_flag!=1){
+      
     t+=0.2;
+    
     jump_speed = jump_speed - g*t;
     y_jump=y_jump+jump_speed*t;
+    
     if(jump_speed<=0){
-      jump_flag=0;
-      t=0;
+        fall_flag=1;
+        jump_flag=0;
+        t=0;
     }
   }
+  
   else{
-    if(y_jump <=floor){
+      
+    if(death_flag==0 && y_jump <=floor){
       fall_flag=0;
       jump_flag=0;
       t=0;
@@ -327,8 +158,9 @@ static void on_timer(int value){
       jump_speed=0.5;
     }
   }
-  
-  if(jump_flag != 1 && y_jump > floor){
+  //pad
+  if(jump_flag != 1 && (death_flag!=0 || y_jump > floor)){
+      
     fall_flag=1;
     jump_flag=0;
     t=t+0.2;
@@ -388,13 +220,200 @@ static void on_display(void){
   int i;
   
   for(i=0;i<num;i++)
-    funcMakeBlock(data[3*i],data[3*i+1],data[3*i+2]);
+    funcMakeBlock(names[1],data[3*i],data[3*i+1],data[3*i+2]);
   
+  
+  //inicijalizacija promenljivih
+  if(floor_counter>=0 && floor_counter<num && change_floors==1){
+      if(floor_counter==num-1){
+          prev_x_r=curr_x_r;
+          curr_x_l=next_x_l;
+          curr_x_r=data[3*floor_counter+1];
+          floor=data[3*floor_counter+2];
+          next_x_l=curr_x_r + 200;
+          
+          change_floors=0;
+    }
+  else{
+          next_x_l=data[3*(floor_counter+1)];
+          curr_x_l=data[3*floor_counter];
+          curr_x_r=data[3*floor_counter+1];
+          floor=data[3*floor_counter+2];
+          next_floor=data[3*(floor_counter+1)+2];
+          
+          if(floor_counter==0){
+              prev_x_r=curr_x_l - 200;
+              prev_floor=death_floor;
+              
+        }
+        else{
+            prev_x_r=data[3*(floor_counter-1)+1];
+            prev_floor=data[3*(floor_counter-1)+2];
+        }
+          
+        change_floors=0;
+
+        
+    }
+}
+  
+  if(x_cam+0.2 >= curr_x_l && x_cam-0.2 <= curr_x_r && y_jump >= floor){
+      death_flag=0;
+}
+    //umire levo
+  if(x_cam + 0.2 < curr_x_l && x_cam - 0.2 > prev_x_r){
+        death_flag=1;
+    }
+    //umire desno
+  if(x_cam - 0.2 > curr_x_r && x_cam + 0.2 < next_x_l){
+        death_flag=1;
+    }
+    
+    //sledeca podloga
+    
+  if(x_cam + 0.2 >= next_x_l && y_jump >= next_floor){
+        change_floors=1;
+        floor_counter++;
+        glutPostRedisplay();
+    }
+    //ukoliko ne moze da dohvati podlogu u skoku
+  if(x_cam + 0.2 >= next_x_l && y_jump < next_floor){
+        
+        //velicina igraca je 0.8, podloge je 1
+        if(y_jump > next_floor - 1.8){
+            x_cam=next_x_l-0.2;
+        }
+    }
+  
+    //prethodna podloga
+    
+  if(x_cam - 0.2 <= prev_x_r && y_jump >= next_floor){
+        change_floors=1;
+        floor_counter--;
+        glutPostRedisplay();
+    }
+    //ukoliko ne moze da dohvati podlogu u skoku
+  if(x_cam - 0.2 <= prev_x_r && y_jump < next_floor){
+        if(y_jump > prev_floor - 1.8){
+            x_cam=prev_x_r-0.2;
+        }
+    }
+    
+    //kraj igre
+  if(floor_counter==(num-1) && y_jump==floor){
+        free(data);
+        printf("Congratulations\n");
+        exit(EXIT_SUCCESS);
+    }
+
+  
+  //igrac
   glPushMatrix();
 	glTranslatef(x_cam,y_jump,1);
 	makePlayer();
   glPopMatrix();
+  
+  
+  //pozadina
+  death_floor = min_floor-0.5;
+  makeBackground(names[0],names[2],data[0]-20,data[3*num-2]+30,death_floor,max_floor+10,-6,8);
 
   glutSwapBuffers();
 
 }
+
+static void init_tex(void)
+{
+    //kod preuzet sa vezbi
+    /* Objekat koji predstavlja teskturu ucitanu iz fajla. */
+    Image * image;
+
+    /* Ukljucuju se teksture. */
+    glEnable(GL_TEXTURE_2D);
+
+    glTexEnvf(GL_TEXTURE_ENV,
+              GL_TEXTURE_ENV_MODE,
+              GL_REPLACE);
+
+    /*
+     * Inicijalizuje se objekat koji ce sadrzati teksture ucitane iz
+     * fajla.
+     */
+    image = image_init(0, 0);
+
+    
+    /* Generisu se identifikatori tekstura. */
+    glGenTextures(2, names);
+    
+    
+    /* Kreira se tekstura pozadina. */
+    image_read(image, FILENAME0);
+    
+    glBindTexture(GL_TEXTURE_2D, names[0]);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 image->width, image->height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+    /* Kreira se tekstura podloge. */
+    image_read(image, FILENAME1);
+
+    glBindTexture(GL_TEXTURE_2D, names[1]);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 image->width, image->height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+    
+    image_read(image, FILENAME2);
+    
+    glBindTexture(GL_TEXTURE_2D, names[2]);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 image->width, image->height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+
+	
+	
+    /* Iskljucujemo aktivnu teksturu */
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    /* Unistava se objekat za citanje tekstura iz fajla. */
+    image_done(image);
+
+    /* Inicijalizujemo matricu rotacije. */
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+}
+
+static void init_lights(void){
+  GLfloat light_position[] = {1,10,5,0};
+  GLfloat light_ambient[] = {0.1,0.1,0.1,1};
+  GLfloat light_diffuse[] = {0.7,0.7,0.7,1};
+  GLfloat light_specular[] = {0.9,0.9,0.9,1};
+
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glLightfv(GL_LIGHT0,GL_POSITION,light_position);
+  glLightfv(GL_LIGHT0,GL_AMBIENT,light_ambient);
+  glLightfv(GL_LIGHT0,GL_DIFFUSE,light_diffuse);
+  glLightfv(GL_LIGHT0,GL_SPECULAR,light_specular);
+}
+
+
